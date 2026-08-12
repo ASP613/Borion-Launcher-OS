@@ -135,6 +135,10 @@ void Injector::inject(const std::wstring& path) {
     // have fun!
     DWORD procId = launchMinecraft();
 
+    if (procId == 0) {
+        return;
+    }
+
     const auto hProc = OpenProcess(PROCESS_ALL_ACCESS, 0, procId);
 
     if (hProc && hProc != INVALID_HANDLE_VALUE) {
