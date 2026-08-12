@@ -7,19 +7,19 @@ DWORD Injector::launchMinecraft() {
     HRESULT hr;
     DWORD pid;
 
+    // CreateProcess does not work on Store apps
+    // https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iapplicationactivationmanager
+    IApplicationActivationManager* pAAM = nullptr;
+
     // alr i hate com but whatever
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
     BOOL comInitSuccess = SUCCEEDED(hr);
 
     if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
-        MessageBoxA(nullptr, "Failed to initialise COM", "Cannot launch Minecraft", MB_OK);
-        return 0;
+        logF("Failed to initialise COM");
+        goto failed;
     }
-
-    // CreateProcess does not work on Store apps
-    // https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iapplicationactivationmanager
-    IApplicationActivationManager* pAAM = nullptr;
 
     hr = CoCreateInstance(CLSID_ApplicationActivationManager, NULL, CLSCTX_LOCAL_SERVER, IID_IApplicationActivationManager, (void**)&pAAM);
 
@@ -28,8 +28,8 @@ DWORD Injector::launchMinecraft() {
             CoUninitialize();
         }
 
-        MessageBoxA(nullptr, "Failed to create an instance of ApplicationActivationManager", "Cannot launch Minecraft", MB_OK);
-        return 0;
+        logF("Failed to create an instance of ApplicationActivationManager");
+        goto failed;
     }
 
     // rip ansi strings
@@ -44,8 +44,8 @@ DWORD Injector::launchMinecraft() {
     }
 
     if (FAILED(hr)) {
-        MessageBoxA(nullptr, "Failed to activate application", "Cannot launch Minecraft", MB_OK);
-        return 0;
+        logF("Failed to activate application");
+        goto failed;
     }
 
     // fine i'm lazy but that is the spirit of this project lmao
@@ -56,6 +56,10 @@ DWORD Injector::launchMinecraft() {
     Sleep(3000);
 
     return pid;
+
+failed:
+    MessageBoxA(nullptr, "See logs for more info", "Cannot launch Minecraft", MB_OK);
+    return 0;
 }
 
 bool Injector::downloadDLL() {
